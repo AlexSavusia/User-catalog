@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useState } from 'react'
 import { PageContainer } from './components/PageContainer/PageContainer'
 import { Pagination } from './components/Pagination/Pagination'
 import { SearchInput } from './components/SearchInput/SearchInput'
@@ -17,34 +17,36 @@ import './App.scss'
 const PAGE_SIZE = 10
 
 export default function App() {
-    const initialSearchParams = useMemo(
-        () => new URLSearchParams(window.location.search),
-        []
+    const [search, setSearch] = useState(() =>
+        getSearchFromSearchParams(new URLSearchParams(window.location.search))
     )
 
-    const [search, setSearch] = useState(
-        getSearchFromSearchParams(initialSearchParams)
+    const [page, setPage] = useState(() =>
+        getPageFromSearchParams(new URLSearchParams(window.location.search))
     )
-    const [page, setPage] = useState(getPageFromSearchParams(initialSearchParams))
 
     const debouncedSearch = useDebouncedValue(search, 400)
-
-    useEffect(() => {
-        setPage(1)
-    }, [debouncedSearch])
+    const normalizedSearch = debouncedSearch.trim()
 
     useEffect(() => {
         updateBrowserQueryParams({
             page,
-            search: debouncedSearch,
+            search: normalizedSearch,
         })
-    }, [page, debouncedSearch])
+    }, [page, normalizedSearch])
+
+    const handleSearchChange = (value: string) => {
+        setSearch(value)
+        setPage(1)
+    }
 
     const { users, total, isLoading, error } = useUsers({
         page,
         limit: PAGE_SIZE,
-        search: debouncedSearch,
+        search: normalizedSearch,
     })
+
+    const showPagination = !isLoading && !error && users.length > 0
 
     return (
         <PageContainer>
@@ -54,7 +56,7 @@ export default function App() {
                 </div>
 
                 <div className="catalog-header__actions">
-                    <SearchInput value={search} onChange={setSearch} />
+                    <SearchInput value={search} onChange={handleSearchChange} />
                 </div>
             </header>
 
@@ -65,7 +67,7 @@ export default function App() {
                 ) : error ? (
                     <StatusView title="Что-то пошло не так" description={error} variant="error"/>
                 ) : users.length === 0 ? (
-                    <StatusView title="Нет совпадений" description="Попробуй другое Имя."/>
+                    <StatusView title="Ничего не найдено" description="Попробуйте изменить поисковый запрос."/>
                 ) : (
                     <UserGrid users={users} />
                 )}
@@ -75,8 +77,13 @@ export default function App() {
                 <span>Страница: {page}</span>
             </section>
 
-            {!isLoading && !error && users.length > 0 ? (
-                <Pagination currentPage={page} totalItems={total} pageSize={PAGE_SIZE} onPageChange={setPage}/>
+            {showPagination ? (
+                <Pagination
+                    currentPage={page}
+                    totalItems={total}
+                    pageSize={PAGE_SIZE}
+                    onPageChange={setPage}
+                />
             ) : null}
         </PageContainer>
     )
