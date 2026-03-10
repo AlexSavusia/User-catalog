@@ -10,6 +10,8 @@ type UseUsersResult = {
 }
 
 export function useUsers(params: UsersQueryParams): UseUsersResult {
+    const { page, limit, search } = params
+
     const [users, setUsers] = useState<User[]>([])
     const [total, setTotal] = useState(0)
     const [isLoading, setIsLoading] = useState(true)
@@ -23,18 +25,14 @@ export function useUsers(params: UsersQueryParams): UseUsersResult {
                 setIsLoading(true)
                 setError(null)
 
-                const data = await fetchUsers(params, controller.signal)
+                const data = await fetchUsers({ page, limit, search }, controller.signal)
 
-                if (controller.signal.aborted) {
-                    return
-                }
+                if (controller.signal.aborted) return
 
                 setUsers(data.users)
                 setTotal(data.total)
             } catch (err) {
-                if ((err as Error).name === 'AbortError') {
-                    return
-                }
+                if ((err as Error).name === 'AbortError') return
                 setError('Произошла ошибка. Попробуйте позже.')
 
             } finally {
@@ -46,10 +44,9 @@ export function useUsers(params: UsersQueryParams): UseUsersResult {
 
         void loadUsers()
 
-        return () => {
-            controller.abort()
-        }
-    }, [params.page, params.limit, params.search])
+        return () => controller.abort()
+
+    }, [page, limit, search])
 
     return {users, total, isLoading, error}
 }
