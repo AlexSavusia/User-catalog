@@ -1,0 +1,41 @@
+@use './variables' as *;
+
+@mixin card {
+  background: $color-surface;
+  border: 1px solid $color-border;
+  border-radius: $radius-lg;
+  box-shadow: $shadow-card;
+}
+
+@mixin input-reset {
+  font: inherit;
+  outline: none;
+}
+
+@mixin button-reset {
+  font: inherit;
+  border: none;
+  background: none;
+  padding: 0;
+}
+
+@mixin skeleton-shimmer {
+  background: linear-gradient(
+                  90deg,
+                  #eceff3 0%,
+                  #f5f6f8 50%,
+                  #eceff3 100%
+  );
+  background-size: 200% 100%;
+  animation: skeleton-loading 1.2s infinite linear;
+}
+
+@keyframes skeleton-loading {
+  0% {
+    background-position: 200% 0;
+  }
+
+  100% {
+    background-position: -200% 0;
+  }
+}
